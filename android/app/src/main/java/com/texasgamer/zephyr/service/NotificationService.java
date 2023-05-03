@@ -6,13 +6,22 @@ import android.content.pm.PackageManager;
 import android.preference.PreferenceManager;
 import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
 import com.texasgamer.zephyr.R;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 public class NotificationService extends NotificationListenerService {
 
     private final String TAG = this.getClass().getSimpleName();
+
+    private final Map<String, Set<Integer>> existingNotifications = new HashMap<>();
 
     @Override
     public void onCreate() {
@@ -75,21 +84,42 @@ public class NotificationService extends NotificationListenerService {
             i.putExtra("title", title);
             i.putExtra("text", text);
             sendBroadcast(i);
+
         } else {
             Log.i(TAG, "Ignoring notification from " + sbn.getPackageName());
         }
+
+        Set<Integer> existing = getExistingNotificationSet(sbn.getPackageName());
+        existing.add(sbn.getId());
     }
 
     @Override
     public void onNotificationRemoved(StatusBarNotification sbn) {
         Log.i(TAG, "onNotificationRemoved");
         Log.i(TAG, "ID :" + sbn.getId() + "\t" + sbn.getNotification().tickerText + "\t" + sbn.getPackageName());
+
+        Set<Integer> existing = getExistingNotificationSet(sbn.getPackageName());
+        existing.remove(sbn.getId());
     }
 
     private boolean isValidNotification(StatusBarNotification sbn) {
+        Set<Integer> existing = getExistingNotificationSet(sbn.getPackageName());
+
         return PreferenceManager.getDefaultSharedPreferences(this)
                 .getBoolean(getString(R.string.pref_app_notif_base) + "-" + sbn.getPackageName(), true) &&
                 getPackageManager().getLaunchIntentForPackage(sbn.getPackageName()) != null
-                && sbn.isClearable();
+                && sbn.isClearable()
+                && NotificationCompat.isGroupSummary(sbn.getNotification()) &&
+                existing.contains(sbn.getId());
+    }
+
+    private Set<Integer> getExistingNotificationSet(String pkgName) {
+        Set<Integer> set = existingNotifications.get(pkgName);
+        if (set == null) {
+            set = new HashSet<>();
+            existingNotifications.put(pkgName, set);
+        }
+
+        return set;
     }
 }
