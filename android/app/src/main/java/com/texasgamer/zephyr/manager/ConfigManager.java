@@ -16,8 +16,6 @@ public class ConfigManager {
     private final String TAG = this.getClass().getSimpleName();
     private final int CACHE_EXPIRATION_IN_SECONDS = 3600;
 
-    private FirebaseRemoteConfig mRemoteConfig;
-
     public ConfigManager(Context context) {
         if (Constants.FIREBASE_REMOTE_CONFIG_ENABLED) {
             FirebaseRemoteConfigSettings configSettings =
@@ -25,38 +23,16 @@ public class ConfigManager {
                             .setDeveloperModeEnabled(Constants.FIREBASE_REMOTE_CONFIG_DEV_MODE)
                             .build();
 
-            mRemoteConfig = FirebaseRemoteConfig.getInstance();
-            mRemoteConfig.setConfigSettings(configSettings);
-            mRemoteConfig.setDefaults(R.xml.remote_config_defaults);
-
             Log.i(TAG, "Firebase Remote Config enabled (dev "
                     + (configSettings.isDeveloperModeEnabled() ? "enabled)" : "disabled)"));
 
-            mRemoteConfig.fetch(CACHE_EXPIRATION_IN_SECONDS)
-                    .addOnSuccessListener(
-                            new OnSuccessListener<Void>() {
-                                @Override
-                                public void onSuccess(Void aVoid) {
-                                    boolean result = mRemoteConfig.activateFetched();
-                                    Log.v(TAG, "Remote config data fetched (" + result + ")");
-                                }
-                            }
-                    )
-                    .addOnFailureListener(
-                            new OnFailureListener() {
-                                @Override
-                                public void onFailure(@NonNull Exception e) {
-                                    Log.e(TAG, "Failed to retrieve remote config: " + e.getMessage());
-                                }
-                            }
-                    );
         } else {
             Log.i(TAG, "Firebase Remote Config disabled");
         }
     }
 
     public boolean isLoginEnabled() {
-        return getBoolean("loginEnabled", Constants.FIREBASE_LOGIN_ENABLED);
+        return false;
     }
 
     public boolean isLoginCardNew() {
@@ -69,11 +45,7 @@ public class ConfigManager {
 
     private boolean getBoolean(String key, boolean fallback) {
         boolean result;
-        if (Constants.FIREBASE_REMOTE_CONFIG_ENABLED) {
-            result = mRemoteConfig.getBoolean(key);
-        } else {
-            result = fallback;
-        }
+        result = fallback;
 
         Log.v(TAG, key + " --> " + result + " (" + fallback + ")");
         return result;

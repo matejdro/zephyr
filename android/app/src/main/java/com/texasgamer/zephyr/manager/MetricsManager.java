@@ -23,26 +23,12 @@ public class MetricsManager {
 
     private final String TAG = this.getClass().getSimpleName();
 
-    private FirebaseAnalytics mFirebaseAnalytics;
     private Context mContext;
 
     public MetricsManager(Context context) {
         mContext = context;
 
         String uuid = getUuid();
-
-        if (Constants.FIREBASE_ANALYTICS_ENABLED) {
-            mFirebaseAnalytics = FirebaseAnalytics.getInstance(context);
-            mFirebaseAnalytics.setUserId(uuid);
-        }
-
-
-        if (Constants.FABRIC_CRASHLYITCS_ENABLED) {
-            if (!Fabric.isInitialized()) {
-                Fabric.with(context, new Crashlytics());
-            }
-            Crashlytics.setUserIdentifier(uuid);
-        }
     }
 
     public void logEvent(@StringRes int iri, Bundle extras) {
@@ -54,44 +40,12 @@ public class MetricsManager {
     public void logLogin(String method, boolean success) {
         Log.v(TAG, "login: " + method + " " + success);
 
-        if (Constants.FIREBASE_ANALYTICS_ENABLED) {
-            Bundle b = new Bundle();
-            b.putString(mContext.getString(R.string.analytics_param_login_method), method);
-            firebaseEvent(R.string.analytics_event_login, b);
-        }
-
-        if (!Constants.FABRIC_ANSWERS_ENABLED) {
-            if (!Fabric.isInitialized()) {
-                Fabric.with(mContext, new Crashlytics());
-            }
-
-            Answers.getInstance().logLogin(new LoginEvent().putMethod(method).putSuccess(success));
-        }
     }
 
     private void firebaseEvent(@StringRes int iri, Bundle extras) {
-        if (Constants.FIREBASE_ANALYTICS_ENABLED) {
-            mFirebaseAnalytics.logEvent(mContext.getString(iri), extras);
-        }
     }
 
     private void fabricEvent(@StringRes int iri, Bundle extras) {
-        if (!Constants.FABRIC_ANSWERS_ENABLED) {
-            return;
-        }
-
-        if (!Fabric.isInitialized()) {
-            Fabric.with(mContext, new Crashlytics());
-        }
-
-        CustomEvent event = new CustomEvent(mContext.getString(iri));
-        if(extras != null) {
-            for (String key : extras.keySet()) {
-                event.putCustomAttribute(key, extras.get(key).toString());
-            }
-        }
-
-        Answers.getInstance().logCustom(event);
     }
 
     private String getUuid() {
