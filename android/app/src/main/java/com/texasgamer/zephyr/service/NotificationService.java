@@ -109,7 +109,7 @@ public class NotificationService extends NotificationListenerService {
                 .getBoolean(getString(R.string.pref_app_notif_base) + "-" + sbn.getPackageName(), true) &&
                 getPackageManager().getLaunchIntentForPackage(sbn.getPackageName()) != null
                 && sbn.isClearable()
-                && NotificationCompat.isGroupSummary(sbn.getNotification()) &&
+                && !NotificationCompat.isGroupSummary(sbn.getNotification()) &&
                 existing.contains(sbn.getId());
     }
 
